@@ -1,0 +1,415 @@
+---
+title: "NBA App"
+subtitle: "Sta 523 - Final Project"
+format: 
+  html:
+    self-contained: true
+author:
+- Federico Arboleda
+- Grace Rade
+- Joseph Hong
+- Steven Tang
+- Luxman Maheswaran
+---
+
+## Goal
+
+The goal of this project is to create a Shiny app that allows users to explore data about the performance of NBA teams from the 2000 - 2001 season to the 2022 - 2023 season. Our app allows users to select a year and a team and dynamically generate visualizations and tables about the selected team and the league during that season. 
+
+The output of the app displays in three tabs. The Team Schedule and Game Statistics tab provides an interactive schedule of the selected team’s games for the chosen season, segmented into preseason, regular season, and playoff games. The app filters and organizes game data, creating lists of games for each segment. Each game is linked to a modal popup, where detailed game statistics are displayed. The app processes the game data, presenting key metrics such as shooting percentages, rebounds, and assists in a user-friendly table format. Links to individual games are dynamically generated using the make_link_column helper function, enhancing user interactivity.
+
+The League-Wide Stats tab provides users with scatter plots that offer a bird’s-eye view of team performance during the selected season. The first scatter plot displays Offensive Ratings (points scored per game) versus Defensive Ratings (points allowed per game), generated using the team_rating function, which aggregates team-level scoring and defensive metrics across the season. A color gradient based on point differential (offensive minus defensive ratings) is applied to highlight team performance. The second scatter plot, created with the three_pointer_stat function, shows 3-point shooting efficiency (percentage) versus volume (attempts per game), with color intensity representing total successful 3-pointers. These visualizations allow users to analyze team performance patterns and trends league-wide. 
+
+The Team Stats tab focuses on the user-selected team, offering a more granular view of its players and performance metrics. Three tables display the top five players on the team for the season in points per game, rebounds per game, and assists per game. Additionally, a line graph shows the team’s game-to-game field goal percentage for the season, created using the team_fgp_per_game function. This time-series visualization helps users understand how the team’s shooting performance evolved over the season. 
+
+Our app helps basketball fans interactively explore data about their favorite teams!
+
+## The Data
+
+The data for our app comes from the [NBA Database](https://www.kaggle.com/datasets/wyattowalsh/basketball/data) database on Kaggle.com, which contains data about all NBA basketball games since the league's founding in 1946. The NBA Database is a SQLite Database that is updated daily to reflect the most recent NBA games.  
+
+We chose to download the relevant data for our app instead of accessing it through the SQLite database. We downloaded the game file as a csv to use in our app. The game file contains data about each game in each season. We also downloaded player data from the [NBA Players](https://www.kaggle.com/datasets/justinas/nba-players-data) database on Kaggle.com to identify player-specific statistics. 
+
+## Cleaning the Data
+
+Our group ensured that the app’s backend is robust and scalable. The data cleaning process in project.qmd removes exhibition games and format data for analysis. For example, exhibition matches against non-NBA teams are filtered using a predefined list of strings. Cleaned data is saved as cleaned_game.csv and read into the app for further processing.
+
+Many of the teams in the game.csv file are non-NBA teams or teams from outside of the US. We created a list of relevant teams to filter out of the data frame. This was done prior to any data-cleaning within the app to appropriately select the right season and team for output.  
+
+We wrote several function to prepare the data for output in the app:
+
+  + The `filter_and_average_pts_home` function to extracts the average points at home for each team in a given year.
+  
+  + The `get_games_for_seasonteam` function takes in a dataset, a season, and a team and returns a list of dataframes. The dataframes correspond to the Pre-Season, Regular Season, and Post-Season games for that team in that season.
+  
+  + The `summarize_game_stat` function returns a list of data frames containing the information about a selected game. The first data frame contains the final score and the second data frame contains the box statistics for the game.
+  
+  + The `team_rating` returns a data frame containing the average points per game (scores) and average points allowed for each team in a season, as well as the points per game difference.
+
+  + The `three_pointer_stat` function returns a data frame containing the average three-point percentage for each team. 
+  
+  + The `get_top5_ppg_for_team_and_season` function returns a table of the top five points for game in the input team and season. 
+  
+  + The `get_top5_apg_for_team_and_season` returns a table of the top five assists per game. 
+  
+  + The `get_top5_rpg_for_team_and_season` function returns the top five rebounds per game in the input season and team. The output of these three functions will be displayed in our app. 
+  
+  + The `team_fgp_per_game` function returns a data frame containing the selected team, the field goal percentage, and game_date for each game that the selected team played in the selected season. 
+  
+The `team_rating`, `three_pointer_stat`, and `team_fgp_per_game` functions return data frames that we use for visualization in our app. The other functions above prepare data directly to be rendered in the app.
+
+## Producing Visualizations
+
+We wrote two functions to produce visualizations in the app. The `graph_team_rating` and `graph_three_rating` functions return the graphs in the League-Wide Stats tab of the app. 
+
+## Scraping Team Logos
+
+We wrote a function to download team logo images from a website that has current and past teams. Not only is it an easier way to download image links, but NBA teams do change from time to time, and web-scraping offers a robust way to download new team logos. For example, there are talks/speculation about expansion teams in Las Vegas or Seattle. The script saves the logos in a separate folder.
+
+## Makefile
+
+We wrote a makefile to tie together the various inputs and files together to make it simple to run understand how the dependencies tie into the final Shiny app.
+
+## The App
+
+The code for our app is in the nba_app.R script. The file also contains a function to create an action link for each game. 
+ 
+Users interact with our app through the sidebar menu and by clicking through the tabs in the main output. In addition to dynamic data filtering and computation, the app includes user-friendly UI elements, such as dropdowns for selecting a season and team, and interactive tabs that present outputs in a visually appealing layout. The app also dynamically loads team logos and full team names, enriching the user experience. It also shows the NBA logo for every team when clicking on it as well. Our group’s NBA stats app offers an intuitive and comprehensive tool for exploring NBA performance data, allowing users to uncover patterns and insights from NBA teams.
+
+The sidebar allows users to choose a year and a team from a drop down menu. We chose to implement drop down menus instead of numeric inputs to eliminate the ability of users to choose a year or team that does not exist in our data. Once they have selected a team and a start year for the season (e.g. select 2022 for the 2022-2023 season), they press the "Show Season Stats" button. 
+
+When the button is pressed, the app will run the functions defined in project.qmd to clean the data to the specified season and team, and product the visualizations.
+The links render to a modal window with the box statistics of each game. 
+
+The logo for the chosen NBA team  will appear under the "Sow Season Stats" button in the side bar when users press the button, along with the full team name instead of the abbreviation. The logo of the team and their opponent will also appear in the pop-up window of box statistics for each game. 
+
+## Setup
+
+We use this section to define our functions and tidy the data for our app. (We also used ChatGPT to help with the coding and writeup) 
+
+```{r data-cleaning, include = TRUE, message = FALSE, warning = FALSE}
+# Load required package
+library(tidyverse)
+library(ggrepel)
+
+# Define the list of strings to filter out
+# These are exhibition games that the NBA played with non-NBA teams
+filter_strings = c(
+  'Milano Olimpia Milano', 'Madrid Real Madrid', 'Flamengo Flamengo', 
+  'Barcelona FC Barcelona Lassa', 'Team Stephen', 'Team Giannis', 
+  'Team Durant', 'Team LeBron', 'Bilbao Basket', 'Barcelona Regal FC',
+  'Milano Armani Jeans Milano', 'Istanbul Fenerbahce Ulker', 
+  'Berlin Alba Berlin', 'Milano EA7 Emporio Armani Milano', 
+  'Barcelona FC Barcelona Regal', 'Lyon-Villeurbanne Adecco ASVEL',
+  'Barcelona Winterthur FC', 'Roma Virtus Lottomatica', 'Khimki BC',
+  'Tel Aviv Maccabi Elite', 'Istanbul Efes Pilsen', 
+  'Lottomatica Lottomatica Roma', 'Unicaja Malaga Unicaja Malaga',
+  'MMT Estudiantes MMT Estudiantes', 'Real Madrid Real Madrid', 
+  'China Team China', 'West NBA All Stars West', 'East NBA All Stars East'
+)
+
+# Read the CSV file
+game_data = read.csv("game.csv")
+
+# Filter out rows containing the unwanted strings
+cleaned_data = game_data |>
+  filter(
+    !(team_name_home %in% filter_strings | team_name_away %in% filter_strings)
+  )
+
+
+write.csv(cleaned_data, "cleaned_game.csv", row.names = FALSE)  # Save to a new file
+```
+
+
+```{r setup, include = TRUE}
+nba_data = read.csv("cleaned_game.csv")
+player_data = read.csv("all_seasons.csv")
+```
+
+```{r data-wrangling, include = TRUE}
+
+#The NBA naming convention means that the year of the season corresponds to the 
+#starting year of the season not the ending year.
+#Ex. 1946 season runs from fall 1946 to spring 1947
+#Average Points
+filter_and_average_pts_home = function(data, year) {
+  # Ensure the year is numeric and convert season_id to character
+  year = as.character(year)
+  
+  # Filter dataset for specified year
+  filtered_data = data |>
+    filter(grepl(paste0(year, "$"), as.character(season_id)))
+  
+  # Calculate the average fg3_pct_home for each team
+  averages = filtered_data |>
+    group_by(team_abbreviation_home) |>
+    summarise(avg_pts_home = mean(pts_home, na.rm = TRUE)) |>
+    arrange(desc(avg_pts_home)) # Optional: sort by highest average
+  
+  return(averages)
+}
+
+year_to_filter = 2005
+team_averages = filter_and_average_pts_home(nba_data, year_to_filter)
+```
+
+```{r games-season}
+
+# get the games for the particular season and team 
+# returns a list of list of dataframes (1) `Regular Season` (the data table containing 
+# data for the regular season); (2) `Pre Season` (the data table containing the data
+# for the preseason); and (3) Playoffs, a list of dataframes, where each dataframe
+# is the sets of games during the playoff.
+get_games_for_seasonteam = function(data, season, team) {
+  supported_types = c("Regular Season", "Playoffs", "Pre Season")
+  # add some information to the data frames to enhance the user experience
+  newdata = data |> 
+    mutate(game_date = as.Date(game_date)) |>
+    filter(str_detect(as.character(season_id), as.character(season)) & 
+           (team_abbreviation_away == team | team_abbreviation_home == team)) |>
+    mutate(team_name = ifelse(team_abbreviation_home == team, team_name_home, 
+                         team_name_away),
+           opponent = ifelse(team_abbreviation_home == team, team_name_away,
+                             team_name_home),
+           game_name = paste0(ifelse(season_type == "Playoffs", "", opponent),
+                              " (", ifelse(team_abbreviation_home == team, 
+                                           "HOME", "AWAY"), ' — ', 
+                              month(game_date, label = TRUE, abbr = FALSE), " ",
+                              day(game_date), ", ", year(game_date), ')'))
+  # split the dataframes into the desired output
+  result = map(supported_types, 
+               function(type) {
+                 print(unique(newdata$season_type))
+                 if(type %in% unique(newdata$season_type)) {
+                   res = newdata |> subset(season_type == type) 
+                   if (type == 'Playoffs') {
+                     playoff.opponents = unique(res$opponent)
+                     pos = map(playoff.opponents,
+                            function(opp) {
+                              res |> subset(opponent == opp)
+                            })
+                     names(pos) = playoff.opponents
+                     return(pos)
+                   } 
+                   return(res)
+                 }
+               }
+           )
+  names(result) = supported_types
+  return(list(by.sub = result, all = newdata))
+} 
+results = get_games_for_seasonteam(nba_data, 2000, 'LAL')
+```
+
+```{r game-summaries}
+library(dplyr)
+library(tidyr)
+
+summarize_game_stat = function(data, gid) {
+  # Filter and reshape data
+  pre = data |> 
+    filter(game_id == gid) |>
+    select(contains("home"), contains("away"), 
+           -contains('id'), -contains('matchup'), -contains('wl')) |>
+    mutate(across(contains("home") | contains("away"), as.character)) |>
+    pivot_longer(cols = c(contains("team"), matches("(.*)_(.*)$")),
+                 names_to = c("stat", "team"), names_pattern = "(.*)_(.*)$",
+                 values_to = 'value') |>
+    pivot_wider(names_from = 'stat') |>
+    mutate(across(contains("pct"), as.numeric),
+           `Field Goals (Made/Attempted)` = sprintf("%s/%s (%.1f%%)", fgm, fga, fg_pct * 100),
+           `3 Pointers (Made/Attempted)`  = sprintf("%s/%s (%.1f%%)", fg3m, fg3a, fg3_pct * 100),
+           `Free Throws (Made/Attempted)` = sprintf("%s/%s (%.1f%%)", ftm, fta, ft_pct * 100),
+           `Rebounds (Offensive-Defensive)` = sprintf("%s-%s (%s)", oreb, dreb, reb)) |>
+    select(-c(fgm:reb, plus_minus)) |>
+    rename(Assists = ast, Steals = stl, Blocks = blk, Turnovers = tov, `Personal Fouls` = pf)
+
+  # Final score
+  final_score = pre |> 
+    select(Team = team_abbreviation, Points = pts) |>
+    pivot_wider(names_from = 'Team', values_from = 'Points')
+  
+  # Add Team column before pivot_longer
+  stats = pre |> 
+    mutate(Team = sprintf("%s (%s)", team_name, team_abbreviation)) |>
+    pivot_longer(cols = -c(team_name, team_abbreviation, pts, Team, team), 
+                 names_to = " ", values_to = "Result") |>
+    select(-c(team_abbreviation:pts)) |>
+    pivot_wider(-team, names_from = "Team", values_from = "Result")
+  
+  list(final = final_score, stats = stats)
+}
+
+# Example call
+tables = summarize_game_stat(results$all, as.integer("20000012"))
+```
+
+
+```{r offense-defense}
+team_rating = function(df, year){
+  home = df |>
+    filter(grepl(paste0(year, "$"), as.character(season_id))) |>
+    group_by(team_abbreviation_home) |>
+    summarize(team_id = max(team_id_home),
+              total_points = sum(pts_home),
+              total_points_allowed = sum(pts_away),
+              total_home_games = n()              )
+  away = df |>
+    filter(grepl(paste0(year, "$"), as.character(season_id))) |>
+    group_by(team_abbreviation_away) |>
+    summarize(team_id = max(team_id_away),
+              total_points_allowed = sum(pts_home),
+              total_points = sum(pts_away),
+              total_away_games = n())
+  
+  total = home |>
+    full_join(away,by=c("team_id")) |>
+    mutate(total_points = total_points.x+total_points.y,
+           total_points_allowed = total_points_allowed.x+total_points_allowed.y,
+           total_games = total_home_games+total_away_games,
+           ppg = total_points/total_games,
+           allowed_ppg = total_points_allowed/total_games,
+           ppg_diff = ppg-allowed_ppg) |>
+    select(team_abbreviation_home,team_id,total_games,ppg,allowed_ppg,ppg_diff) |>
+    filter(!is.na(ppg))
+  
+  return(total)
+}
+
+graph_team_rating = function(data){
+  p = ggplot(data, aes(x = ppg, y = allowed_ppg, label = team_abbreviation_home, color=ppg_diff)) +
+  geom_point(size=1) + # Point for exact position
+  geom_text_repel(size = 3) +  # Scatter plot with points
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +  # Add x = y line
+  labs(title = "Total Points Scored vs. Total Points Allowed",
+       x = "Offensive Rating",
+       y = "Defensive Rating",
+       color = "Point Differential per Game") +
+    theme_minimal() +
+    scale_color_gradient2(high = "green",mid="#808080", low = "#FF0000",midpoint=0)  # Color gradient from green (negative) to red (positive)
+  return(p)
+}
+
+# Intermediate values as sample output
+temp = team_rating(nba_data, 2005)
+graph_team_rating(temp)
+```
+
+```{r 3point-efficieny-vol}
+three_pointer_stat = function(df, year){
+  # Calculate the average fg3_pct_home for each team
+  home = df |>
+    filter(grepl(paste0(year, "$"), as.character(season_id))) |>
+    group_by(team_abbreviation_home) |>
+    summarize(team_id = max(team_id_home),
+              fg3m = sum(fg3m_home),
+              fg3a = sum(fg3a_home),
+              total_games = n())
+  away = df |>
+    filter(grepl(paste0(year, "$"), as.character(season_id))) |>
+    group_by(team_abbreviation_away) |>
+    summarize(team_id = max(team_id_away),
+              fg3m = sum(fg3m_away),
+              fg3a = sum(fg3a_away),
+              total_games = n())
+  
+  total = home |>
+    full_join(away,by=c("team_id")) |>
+    mutate(fg3m = fg3m.x+fg3m.y,
+           fg3a = fg3a.x+fg3a.y,
+           fg3a_pg = (fg3a)/(total_games.x+total_games.y),
+           fg3_pct = fg3m/fg3a) |>
+    select(team_abbreviation_home,team_id,fg3a_pg,fg3_pct,fg3m)
+  return(total)
+}
+
+graph_three_rating = function(data){
+  p = ggplot(data, aes(x = fg3a_pg, y = fg3_pct, label = team_abbreviation_home,color = fg3m)) +
+  geom_point(size=1) + # Point for exact position
+  geom_text_repel(size = 3) +  # Scatter plot with points
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black") +  # Add x = y line
+  labs(title = "Three Point Efficiency and Volume",
+       x = "3 Point Volume",
+       y = "3 Point Percentage",
+       color = "Made Threes") +
+  theme_minimal()
+  return(p)
+}
+
+temp = three_pointer_stat(nba_data,2005)
+graph_three_rating(temp)
+```
+
+```{r top5-lists}
+# get player data in correct season format 
+player_data_transformed = player_data |>
+  mutate(season = substr(season, 1, 4))
+
+# function to extract top 5 ppg points per game team and season selected
+get_top5_ppg_for_team_and_season = function(data, team, year) {
+  top5pts = data |>
+    filter(team_abbreviation == team, season == year) |>
+    arrange(desc(pts)) |>
+    slice_head(n = 5) |>
+    select(player_name, pts)
+  return(top5pts)
+}
+
+# function to extract top 5 assists per game per team and season selected
+get_top5_apg_for_team_and_season = function(data, team, year) {
+  top5ast = data |>
+    filter(team_abbreviation == team, season == year) |>
+    arrange(desc(ast)) |>
+    slice_head(n = 5) |>
+    select(player_name, ast)
+  return(top5ast)
+}
+
+# function to extract top 5 rebounds per game per team and season selected
+get_top5_rpg_for_team_and_season = function(data, team, year) {
+  top5reb = data |>
+    filter(team_abbreviation == team, season == year) |>
+    arrange(desc(reb)) |>
+    slice_head(n = 5) |>
+    select(player_name, reb)
+  return(top5reb)
+}
+```
+
+
+```{r fpg-per-game}
+# function to get list of games for team and season selected and field goal % for each game
+team_fgp_per_game = function(data, year, team) {
+  year = as.character(year)
+  team_games = data |>
+    filter(grepl(paste0(year, "$"), as.character(season_id))) |>
+    filter(team_abbreviation_home == team | team_abbreviation_away == team) |>
+    select(team_home = team_abbreviation_home, fg_pct_home, 
+           team_away = team_abbreviation_away, fg_pct_away, game_date) |>
+    # have to combine home fg% and away fg% into one column depending on if team is home or away
+    pivot_longer(
+      cols = c(team_home, team_away),
+      names_to = "location",
+      values_to = "teams"
+    ) |>
+    mutate(
+      fg_pct = ifelse(location == "team_home", fg_pct_home, fg_pct_away)
+    ) |>
+    select(teams, fg_pct, game_date) |>
+    filter(teams == team)
+  
+  return(team_games)
+}
+
+team_games = team_fgp_per_game(nba_data, 2005, "ATL")
+```
+
+
+## References
+
++ [NBA Database](https://www.kaggle.com/datasets/wyattowalsh/basketball/data)
+
++ [NBA Players Data](https://www.kaggle.com/datasets/justinas/nba-players-data)
+
++ ChatGPT
